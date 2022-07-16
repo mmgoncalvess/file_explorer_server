@@ -30,7 +30,6 @@ public class Server {
         Socket clientSocket = null;
         try {
             clientSocket = serverSocket.accept();    // Block while waiting for client connections
-            System.out.println("\nFIRST: Client connected...  " + clientSocket.getInetAddress().getHostName());
         } catch (IOException e) {
             e.printStackTrace();
         }

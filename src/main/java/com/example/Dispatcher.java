@@ -3,18 +3,18 @@ package com.example;
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import com.example.Requests;
 
 public class Dispatcher {
     private final Socket clientSocket;
     private final FileExplorer fileExplorer;
-    private String instruction = "";        //  20 bytes
-    private String pathOne = "";            //  260 bytes
-    private String pathTwo = "";            //  260 bytes
+    private String instruction = "";    //  20 bytes
+    private String pathOne = "";    //  260 bytes
+    private String pathTwo = "";    //  260 bytes
     private InputStream inputStream;
     private OutputStream outputStream;
     private boolean confirmation;
-    private String json;                    // ongoingDirectoryJSON
-
+    private String json;    // ongoingDirectoryJSON
 
     public Dispatcher(Socket connection, FileExplorer fileExplorer) {
         this.clientSocket = connection;
@@ -110,7 +110,6 @@ public class Dispatcher {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-
                 }
                 json = fileExplorer.getOngoingDirectoryJSON();
                 confirmation = result_receive;
