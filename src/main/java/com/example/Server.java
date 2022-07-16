@@ -19,14 +19,14 @@ public class Server {
             FileExplorer fileExplorer = new FileExplorer();
             while (true) {
                 Dispatcher dispatcher = new Dispatcher(connect(), fileExplorer);
-                dispatcher.run();   // Thread thread = new Thread(dispatcher); // thread.start();
+                dispatcher.run();
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public Socket connect() {
+    private Socket connect() {
         Socket clientSocket = null;
         try {
             clientSocket = serverSocket.accept();    // Block while waiting for client connections

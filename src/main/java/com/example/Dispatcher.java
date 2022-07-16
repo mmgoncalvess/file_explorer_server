@@ -4,24 +4,23 @@ import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
-public class Dispatcher implements Runnable{
-    private Socket clientSocket;
-    private FileExplorer fileExplorer;
+public class Dispatcher {
+    private final Socket clientSocket;
+    private final FileExplorer fileExplorer;
     private String instruction = "";        //  20 bytes
     private String pathOne = "";            //  260 bytes
     private String pathTwo = "";            //  260 bytes
     private InputStream inputStream;
-
+    private OutputStream outputStream;
     private boolean confirmation;
     private String json;                    // ongoingDirectoryJSON
-    private FileInputStream fileInputStream;        // only in SEND case
+
 
     public Dispatcher(Socket connection, FileExplorer fileExplorer) {
         this.clientSocket = connection;
         this.fileExplorer = fileExplorer;
     }
 
-    @Override
     public void run() {
         receive();
         process();
@@ -29,15 +28,17 @@ public class Dispatcher implements Runnable{
         close();
     }
 
-    public void receive() {
+    private void receive() {
         try {
             inputStream = new BufferedInputStream(clientSocket.getInputStream());
             byte[] arrayInstruction = new byte[20];
             byte[] arrayPathOne = new byte[260];
             byte[] arrayPathTwo = new byte[260];
-            inputStream.read(arrayInstruction);
-            inputStream.read(arrayPathOne);
-            inputStream.read(arrayPathTwo);
+            int count;
+            count = inputStream.read(arrayInstruction);
+            count = count + inputStream.read(arrayPathOne);
+            count = count + inputStream.read(arrayPathTwo);
+            System.out.println("Bytes read: " + count);
             instruction = new String(arrayInstruction);
             pathOne = new String(arrayPathOne);
             pathTwo = new String(arrayPathTwo);
@@ -49,7 +50,7 @@ public class Dispatcher implements Runnable{
         }
     }
 
-    public void process() {
+    private void process() {
         switch (instruction) {
             case "ONGOING_DIRECTORY":
                 json = fileExplorer.getOngoingDirectoryJSON();
@@ -93,74 +94,72 @@ public class Dispatcher implements Runnable{
                 break;
 
             case "RECEIVE":
-                
+                File target = new File(pathOne);
+                boolean result_receive = false;
+                if (!target.exists()) {
+                    try {
+                        FileOutputStream fileOutputStream = new FileOutputStream(target);
+                        int data;
+                        int count = 0;
+                        while ((data = inputStream.read()) != -1) {
+                            fileOutputStream.write(data);
+                            count++;
+                        }
+                        if (count > 1) result_receive = true;
+                        fileOutputStream.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                }
+                json = fileExplorer.getOngoingDirectoryJSON();
+                confirmation = result_receive;
                 break;
 
             case "SEND":
+                try {
+                    outputStream = clientSocket.getOutputStream();
+                    File source = new File(pathOne);
+                    confirmation = source.exists();
+                    byte byteConfirmation = (byte) (confirmation? 1 : 0);
+                    outputStream.write(byteConfirmation);
+                    if (confirmation) {
+                        FileInputStream fileInputStream = new FileInputStream(source);
+                        int data;
+                        while ((data = fileInputStream.read()) != -1) {
+                            outputStream.write(data);
+                        }
+                        fileInputStream.close();
+                    }
+                    // that is all, confirmation and file have been sent!!!
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 break;
 
             default:
-
-
-        }
-
-
-
-
-
-
-
-        // *************************************************************************************** //
-        /*
-
-        if(messageIn == null) return;
-        String resource = messageIn.substring(5, messageIn.length() - 9);
-
-
-        if(resource.endsWith(".jpg")) {
-            System.out.println("jpg");
-            file = new File("Resources/" + resource);
-            contentType = "image/jpeg";
-        } else if (resource.endsWith(".html")) {
-            file = new File("Resources/" + resource);
-            contentType = "text/html; charset=UTF-8";
-        } else {
-            file = new File("Resources/file1.html");
-            contentType = "text/html; charset=UTF-8";
-        }
-        System.out.println("Resource: " + resource);
-
-        messageOut = "HTTP/1.0 200 Document Follows\r\nContent-Type: " + contentType + "\r\nContent-Length: <" + file.length() + "> \r\n\r\n";  //text/html; charset=UTF-8  image/jpeg
-        System.out.println("THIRD: response ... " + messageOut.substring(0, 54));
-
-        */
-    }
-
-    public void send() {
-        if (file == null) return;
-        try {
-            bufferedInputStream = new BufferedInputStream(new FileInputStream(file));
-            System.out.println(file.getName());
-            bufferedOutputStream = new BufferedOutputStream(clientSocket.getOutputStream());
-            bufferedOutputStream.write(messageOut.getBytes(StandardCharsets.UTF_8));
-            int totalBytes = 0;
-            int ch;
-            while ((ch = bufferedInputStream.read()) != -1) {
-                bufferedOutputStream.write(ch);
-                totalBytes++;
-            }
-            bufferedOutputStream.flush();
-            System.out.println("FOURTH: total bytes sent: " + totalBytes);
-        } catch (IOException e){
-                e.printStackTrace();
+                json = fileExplorer.getOngoingDirectoryJSON();
+                confirmation = false;
         }
     }
 
-    public void close() {
+    private void send() {
+        if (instruction.equals("SEND")) return;
         try {
+            outputStream = clientSocket.getOutputStream();
+            byte byteConfirmation = (byte) (confirmation? 1 : 0);
+            outputStream.write(byteConfirmation);
+            outputStream.write(json.getBytes(StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void close() {
+        try {
+            inputStream.close();
             clientSocket.getOutputStream().close();
             clientSocket.close();
-            System.out.println("FIFTH: client socket closed, server socket closed...");
         } catch (IOException e) {
             e.printStackTrace();
         }
