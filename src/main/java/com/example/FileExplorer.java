@@ -1,7 +1,7 @@
 package com.example;
 
-import com.sun.scenario.animation.shared.FiniteClipEnvelope;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -94,6 +94,14 @@ public class FileExplorer {
     }
 
     public String getOngoingDirectoryJSON() {
-
+        ObjectMapper objectMapper = new ObjectMapper();
+        OngoingDirectory ongoingDirectory = getOngoingDirectory();
+        String json = "";
+        try {
+            json = objectMapper.writeValueAsString(ongoingDirectory);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return json;
     }
 }

@@ -1,5 +1,7 @@
 package com.example;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -140,5 +142,21 @@ class FileExplorerTest {
         fileExplorer.rename(source, newName);
         assertTrue(newNameFile.exists());
         fileExplorer.deleteFile(newName);
+    }
+
+    @Test
+    void getOngoingDirectoryJSON() {
+        String expectedValue = System.getProperty("user.dir");
+        fileExplorer.goToDirectory(expectedValue);
+        String json = fileExplorer.getOngoingDirectoryJSON();
+        ObjectMapper objectMapper = new ObjectMapper();
+        OngoingDirectory ongoingDirectory = null;
+        try {
+            ongoingDirectory = objectMapper.readValue(json, OngoingDirectory.class);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        String actualValue = ongoingDirectory.getCurrentDirectory();
+        assertEquals(expectedValue, actualValue);
     }
 }
