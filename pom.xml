@@ -36,7 +36,7 @@
                     <configuration>
                         <archive>
                             <manifest>
-                                <mainClass>com.example.caracas.App</mainClass>
+                                <mainClass>com.example.Main</mainClass>
                             </manifest>
                         </archive>
                     </configuration>
