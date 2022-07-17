@@ -7,7 +7,7 @@ public enum Requests {
     DELETE,
     NEW_DIRECTORY,
     RENAME,
-    COPY,
-    RECEIVE,
-    SEND;
+    COPY,                           // Copy a file from remote host to the same remote host
+    RECEIVE,                        // Local host send a file to remote
+    SEND;                           // Remote host send a file to local
 }

@@ -2,8 +2,8 @@ package com.example;
 
 import java.io.*;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import com.example.Requests;
 
 public class Dispatcher {
     private final Socket clientSocket;
@@ -11,6 +11,7 @@ public class Dispatcher {
     private String instruction = "";    //  20 bytes
     private String pathOne = "";    //  260 bytes
     private String pathTwo = "";    //  260 bytes
+    private int size = 0;           // 10 bytes
     private InputStream inputStream;
     private OutputStream outputStream;
     private boolean confirmation;
@@ -34,17 +35,29 @@ public class Dispatcher {
             byte[] arrayInstruction = new byte[20];
             byte[] arrayPathOne = new byte[260];
             byte[] arrayPathTwo = new byte[260];
+            byte[] arraySize = new byte[10];
             int count;
             count = inputStream.read(arrayInstruction);
             count = count + inputStream.read(arrayPathOne);
             count = count + inputStream.read(arrayPathTwo);
-            System.out.println("Bytes read: " + count);
+            count = count + inputStream.read(arraySize);
             instruction = new String(arrayInstruction);
             pathOne = new String(arrayPathOne);
             pathTwo = new String(arrayPathTwo);
+            ByteBuffer buffer = ByteBuffer.allocate(10);
+            buffer.put(arraySize);
+            buffer.rewind();
+            size = buffer.getInt();
             instruction = instruction.trim();
             pathOne = pathOne.trim();
             pathTwo = pathTwo.trim();
+
+            System.out.println("===========================================================");
+            System.out.println("Bytes read: " + count);
+            System.out.println("Instruction: " + instruction);
+            System.out.println("PathOne: " + pathOne);
+            System.out.println("PathTwo: " + pathTwo);
+            System.out.println("Array size: " + size);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -94,19 +107,19 @@ public class Dispatcher {
                 break;
 
             case "RECEIVE":
-                File target = new File(pathOne);
+                File target = new File(pathTwo);
                 boolean result_receive = false;
                 if (!target.exists()) {
                     try {
                         FileOutputStream fileOutputStream = new FileOutputStream(target);
-                        int data;
                         int count = 0;
-                        while ((data = inputStream.read()) != -1) {
-                            fileOutputStream.write(data);
+                        while (count < size) {
+                            fileOutputStream.write(inputStream.read());
                             count++;
                         }
-                        if (count > 1) result_receive = true;
                         fileOutputStream.close();
+                        if (count == size) result_receive = true;
+                        System.out.println(count + " bytes copied");
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -125,10 +138,13 @@ public class Dispatcher {
                     if (confirmation) {
                         FileInputStream fileInputStream = new FileInputStream(source);
                         int data;
+                        int count = 0;
                         while ((data = fileInputStream.read()) != -1) {
                             outputStream.write(data);
+                            count++;
                         }
                         fileInputStream.close();
+                        System.out.println(count + " bytes sent from Server... !!!");
                     }
                     // that is all, confirmation and file have been sent!!!
                 } catch (IOException e) {
@@ -157,8 +173,6 @@ public class Dispatcher {
     private void close() {
         try {
             inputStream.close();
-            clientSocket.getOutputStream().close();
-            clientSocket.close();
         } catch (IOException e) {
             e.printStackTrace();
         }

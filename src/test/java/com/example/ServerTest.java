@@ -6,7 +6,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.awt.*;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import static org.junit.jupiter.api.Assertions.*;
@@ -265,5 +269,54 @@ class ServerTest {
         confirmation = mockClient.isConfirmation();
         assertTrue(confirmation);
         //System.out.println(json);
+    }
+
+    @Test
+    void caseReceive() {
+        MockClient mockClient = new MockClient();
+        mockClient.setInstruction("RECEIVE");
+        String pathOne = "C:\\Users\\Utilizador\\Desktop\\Intellij\\file_explorer_server\\src\\test\\java\\com\\example\\mock\\lisbon.jpg";
+        String pathTwo = "C:\\Users\\Utilizador\\Desktop\\Intellij\\file_explorer_server\\src\\test\\java\\com\\example\\mock\\directory\\lisbon.jpg";
+        mockClient.setPathOne(pathOne);
+        mockClient.setPathTwo(pathTwo);
+        int size = 0;
+        try {
+            size = (int) Files.size(new File(pathOne).toPath());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        mockClient.setSize(size);
+        mockClient.connectToServer();
+        String json = mockClient.getJson();
+        boolean confirmation = mockClient.isConfirmation();
+        assertTrue(confirmation);
+
+        mockClient = new MockClient();
+        mockClient.setInstruction("DELETE");
+        pathOne = "C:\\Users\\Utilizador\\Desktop\\Intellij\\file_explorer_server\\src\\test\\java\\com\\example\\mock\\directory\\lisbon.jpg";
+        mockClient.setPathOne(pathOne);
+        mockClient.connectToServer();
+        confirmation = mockClient.isConfirmation();
+    }
+
+    @Test
+    void caseSend() {
+        MockClient mockClient = new MockClient();
+        mockClient.setInstruction("SEND");
+        String pathOne = "C:\\Users\\Utilizador\\Desktop\\Intellij\\file_explorer_server\\src\\test\\java\\com\\example\\mock\\lisbon.jpg";
+        String pathTwo = "C:\\Users\\Utilizador\\Desktop\\Intellij\\file_explorer_server\\src\\test\\java\\com\\example\\mock\\directory\\lisbonFromServer.jpg";
+        mockClient.setPathOne(pathOne);
+        mockClient.setPathTwo(pathTwo);
+        mockClient.connectToServer();
+        boolean confirmation = mockClient.isConfirmation();
+        assertTrue(confirmation);
+
+        mockClient = new MockClient();
+        mockClient.setInstruction("DELETE");
+        pathOne = "C:\\Users\\Utilizador\\Desktop\\Intellij\\file_explorer_server\\src\\test\\java\\com\\example\\mock\\directory\\lisbonFromServer.jpg";
+        mockClient.setPathOne(pathOne);
+        mockClient.connectToServer();
+        confirmation = mockClient.isConfirmation();
+        assertTrue(confirmation);
     }
 }
