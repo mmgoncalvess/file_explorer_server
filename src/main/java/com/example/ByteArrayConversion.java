@@ -3,7 +3,7 @@ package com.example;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-public class ByteArrayConvertion {
+public class ByteArrayConversion {
     public static void main(String[] args) {
 
         // int to byte[]
