@@ -266,7 +266,7 @@ class ServerTest {
         json = mockClient.getJson();
         confirmation = mockClient.isConfirmation();
         assertTrue(confirmation);
-        //System.out.println(json);
+
     }
 
     @Test
@@ -288,6 +288,7 @@ class ServerTest {
         String json = mockClient.getJson();
         boolean confirmation = mockClient.isConfirmation();
         assertTrue(confirmation);
+        //System.out.println(json);
 
         mockClient = new MockClient();
         mockClient.setInstruction("DELETE");
@@ -295,6 +296,7 @@ class ServerTest {
         mockClient.setPathOne(pathOne);
         mockClient.connectToServer();
         confirmation = mockClient.isConfirmation();
+        assertTrue(confirmation);
     }
 
     @Test

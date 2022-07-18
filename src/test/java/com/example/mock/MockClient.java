@@ -34,42 +34,44 @@ public class MockClient {
             outputStream.write(sizeArrayBytes);
             if (instruction.trim().equals("RECEIVE")) sendFile(outputStream, pathOne);
             outputStream.flush();
-
             InputStream inputStream = connection.getInputStream();
-            int input = inputStream.read();
-            if (input == 0) confirmation = false;
-            if (input == 1) confirmation = true;
 
             if (instruction.trim().equals("SEND")) {
+                byte[] arraySize = new byte[10];
+                int bytesRead = inputStream.read(arraySize);
+                System.out.println(bytesRead + " bytes read from server... !!!");
+                ByteBuffer buffer = ByteBuffer.allocate(10);
+                buffer.put(arraySize);
+                buffer.rewind();
+                int fileSize = buffer.getInt();
                 File file = new File(pathTwo);
                 FileOutputStream fileOutputStream = new FileOutputStream(file);
-                int data;
                 int count = 0;
-                while ((data = inputStream.read()) != -1) {
-                    fileOutputStream.write(data);
+                while (count < fileSize) {
+                    fileOutputStream.write(inputStream.read());
                     count++;
                 }
                 fileOutputStream.close();
                 System.out.println(count + " bytes received by client... !!!");
-                return;
             }
 
+            int input = inputStream.read();
+            if (input == 0) confirmation = false;
+            if (input == 1) confirmation = true;
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            int data = 0;
+            int data;
             while ((data = inputStream.read()) != -1) {
                 byteArrayOutputStream.write(data);
             }
             json = byteArrayOutputStream.toString();
-
             byteArrayOutputStream.close();
             inputStream.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 
-    private boolean sendFile(OutputStream outputStream, String pathOne) {
+    private void sendFile(OutputStream outputStream, String pathOne) {
         File file = new File(pathOne);
         try {
             FileInputStream fileInputStream = new FileInputStream(file);
@@ -78,10 +80,8 @@ public class MockClient {
                 outputStream.write(data);
             }
             fileInputStream.close();
-            return true;
         } catch (IOException e) {
             e.printStackTrace();
-            return false;
         }
     }
 

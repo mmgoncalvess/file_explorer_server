@@ -4,6 +4,7 @@ import java.io.*;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
 public class Dispatcher {
     private final Socket clientSocket;
@@ -107,49 +108,15 @@ public class Dispatcher {
                 break;
 
             case "RECEIVE":
-                File target = new File(pathTwo);
-                boolean result_receive = false;
-                if (!target.exists()) {
-                    try {
-                        FileOutputStream fileOutputStream = new FileOutputStream(target);
-                        int count = 0;
-                        while (count < size) {
-                            fileOutputStream.write(inputStream.read());
-                            count++;
-                        }
-                        fileOutputStream.close();
-                        if (count == size) result_receive = true;
-                        System.out.println(count + " bytes copied");
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
+                boolean result_receive = copyReceivedFileFromClient();
                 json = fileExplorer.getOngoingDirectoryJSON();
                 confirmation = result_receive;
                 break;
 
             case "SEND":
-                try {
-                    outputStream = clientSocket.getOutputStream();
-                    File source = new File(pathOne);
-                    confirmation = source.exists();
-                    byte byteConfirmation = (byte) (confirmation? 1 : 0);
-                    outputStream.write(byteConfirmation);
-                    if (confirmation) {
-                        FileInputStream fileInputStream = new FileInputStream(source);
-                        int data;
-                        int count = 0;
-                        while ((data = fileInputStream.read()) != -1) {
-                            outputStream.write(data);
-                            count++;
-                        }
-                        fileInputStream.close();
-                        System.out.println(count + " bytes sent from Server... !!!");
-                    }
-                    // that is all, confirmation and file have been sent!!!
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                boolean result_send = sendFileToClient();
+                json = fileExplorer.getOngoingDirectoryJSON();
+                confirmation = result_send;
                 break;
 
             default:
@@ -159,7 +126,6 @@ public class Dispatcher {
     }
 
     private void send() {
-        if (instruction.equals("SEND")) return;
         try {
             outputStream = clientSocket.getOutputStream();
             byte byteConfirmation = (byte) (confirmation? 1 : 0);
@@ -176,5 +142,57 @@ public class Dispatcher {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private boolean copyReceivedFileFromClient() {
+        File target = new File(pathTwo);
+        boolean result_receive = false;
+        if (!target.exists()) {
+            try {
+                FileOutputStream fileOutputStream = new FileOutputStream(target);
+                int count = 0;
+                while (count < size) {
+                    fileOutputStream.write(inputStream.read());
+                    count++;
+                }
+                fileOutputStream.close();
+                if (count == size) result_receive = true;
+                System.out.println(count + " bytes copied");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return result_receive;
+    }
+
+    private boolean sendFileToClient() {
+        try {
+            outputStream = clientSocket.getOutputStream();
+            File source = new File(pathOne);
+            boolean fileExists = source.exists();
+            //  10 bytes
+            int outputFileSize = (int) Files.size(source.toPath());
+
+            if (fileExists && outputFileSize > 1) {
+                ByteBuffer byteBuffer = ByteBuffer.allocate(10);
+                byteBuffer.putInt(outputFileSize);
+                byteBuffer.rewind();
+                byte[] sizeByteArray = byteBuffer.array();
+                outputStream.write(sizeByteArray);
+                FileInputStream fileInputStream = new FileInputStream(source);
+                int data;
+                int count = 0;
+                while ((data = fileInputStream.read()) != -1) {
+                    outputStream.write(data);
+                    count++;
+                }
+                fileInputStream.close();
+                System.out.println(count + " bytes sent from Server... !!!");
+                if (outputFileSize == count) return true;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }
